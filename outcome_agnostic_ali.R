@@ -492,6 +492,8 @@ try_pred_new_ali_cv <- function(N = 1000, train_prop = 0.5, beta_admit, beta_ed,
   
   #### Fit models using Y1, Y2 and admission-specific ALI instead of separate components
   #### Emergency Department2
+  #### NOTE: pred_ed2 is predicted from the mode: fit_ed2, where its formula is: 
+  #### "Y_ed2 ~", paste0(factor_ALI_comp, collapse = "+"), " + Y_admit"
   fit_admit_ed2 <- glm(formula = Y_admit ~ pred_ed2,
                       data = test_dat,
                       family = "binomial")
@@ -675,6 +677,11 @@ cat("\nMean AUC - Old ALI:\n");           print(avg_auc("old_ali"))
 cat("\nMean AUC - Admission-specific: Admit:\n"); print(avg_auc("admit_ali"))
 cat("\nMean AUC - Admission-specific: Ed:\n"); print(avg_auc("ed_ali"))
 cat("\nMean AUC - Admission-specific: Ed2:\n"); print(avg_auc("ed2_ali")) 
-# Average auc_admit for Ed2 is surprisingly high!? 
+# Average auc_admit under Ed2_ALI is surprisingly high!? 
 
+
+#*------------------------------- Possible Next Steps? -------------------------
+#* Real biomarkers are correlated (A1C and BMI, blood pressure components, etc.). Adding a correlation structure
+#* Aggregate probabilities: simplex? but minimize what? or constrained MLE? 
+#* Run simulations where some components truly don't matter (zero true coefficient) and verify the new ALI down-weights them appropriately
 
