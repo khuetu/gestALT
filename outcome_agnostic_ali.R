@@ -453,8 +453,80 @@ try_pred_new_ali_cv <- function(N = 1000, train_prop = 0.5, beta_admit, beta_ed,
   suppressMessages(
     auc_ed2_admit <- pROC::auc(pROC::roc(test_dat$Y_ed2, pred_ed2_admit))
   )
-  #### << Copy and paste from here to next marker and repeat for ed and ed 2 >>
   
+  #### Fit models using Y1, Y2 and admission-specific ALI instead of separate components
+  #### Emergency Department
+  fit_admit_ed <- glm(formula = Y_admit ~ pred_ed,
+                         data = test_dat,
+                         family = "binomial")
+  #### Emergency department visits (conditionally independent of ANY_ADMIT)
+  fit_ed_ed <- glm(formula = Y_ed ~ pred_ed,
+                      data = test_dat,
+                      family = "binomial")
+  #### Emergency department visits (dependent on ANY_ADMIT)
+  fit_ed2_ed <- glm(formula = Y_ed2 ~ pred_ed + Y_admit,
+                       data = test_dat,
+                       family = "binomial")
+  
+  #### Predict from models using Y1, Y2 and admission-specific ALI instead of separate components
+  #### Hospital admissions
+  pred_admit_ed <- predict(fit_admit_ed, type = "response")
+  #### Emergency department visits (conditionally independent of ANY_ADMIT)
+  pred_ed_ed <- predict(fit_ed_ed, type = "response")
+  #### Emergency department visits (dependent on ANY_ADMIT)
+  pred_ed2_ed = predict(fit_ed2_ed, type = "response")
+  
+  #### Calculate AUC from admission-specific ALI models
+  #### Hospital admissions
+  suppressMessages(
+    auc_admit_ed <- pROC::auc(pROC::roc(test_dat$Y_admit, pred_admit_ed))
+  )
+  #### Emergency department visits (conditionally independent of ANY_ADMIT)
+  suppressMessages(
+    auc_ed_ed <- pROC::auc(pROC::roc(test_dat$Y_ed, pred_ed_ed))
+  )
+  #### Emergency department visits (dependent on ANY_ADMIT)
+  suppressMessages(
+    auc_ed2_ed <- pROC::auc(pROC::roc(test_dat$Y_ed2, pred_ed2_ed))
+  )
+  
+  #### Fit models using Y1, Y2 and admission-specific ALI instead of separate components
+  #### Emergency Department2
+  fit_admit_ed2 <- glm(formula = Y_admit ~ pred_ed2,
+                      data = test_dat,
+                      family = "binomial")
+  #### Emergency department visits (conditionally independent of ANY_ADMIT)
+  fit_ed_ed2 <- glm(formula = Y_ed ~ pred_ed2,
+                   data = test_dat,
+                   family = "binomial")
+  #### Emergency department visits (dependent on ANY_ADMIT)
+  fit_ed2_ed2 <- glm(formula = Y_ed2 ~ pred_ed2 + Y_admit,
+                    data = test_dat,
+                    family = "binomial")
+  
+  #### Predict from models using Y1, Y2 and admission-specific ALI instead of separate components
+  #### Hospital admissions
+  pred_admit_ed2 <- predict(fit_admit_ed2, type = "response")
+  #### Emergency department visits (conditionally independent of ANY_ADMIT)
+  pred_ed_ed2 <- predict(fit_ed_ed2, type = "response")
+  #### Emergency department visits (dependent on ANY_ADMIT)
+  pred_ed2_ed2 <- predict(fit_ed2_ed2, type = "response")
+  
+  #### Calculate AUC from admission-specific ALI models
+  #### Hospital admissions
+  suppressMessages(
+    auc_admit_ed2 <- pROC::auc(pROC::roc(test_dat$Y_admit, pred_admit_ed2))
+  )
+  #### Emergency department visits (conditionally independent of ANY_ADMIT)
+  suppressMessages(
+    auc_ed_ed2 <- pROC::auc(pROC::roc(test_dat$Y_ed, pred_ed_ed2))
+  )
+  #### Emergency department visits (dependent on ANY_ADMIT)
+  suppressMessages(
+    auc_ed2_ed2 <- pROC::auc(pROC::roc(test_dat$Y_ed2, pred_ed2_ed2))
+  )
+  
+  #------------------------------------------------------------------
   ### Aggregate (faux-"ensemble") the predicted probabilities from models using Y1, Y2 and separate ALI components
   #### Sarah acknowledges that this is ad-hoc and could formally be derived using probability rules
   #### Aggregate by averaging over predicted probabilities
@@ -600,3 +672,9 @@ avg_auc <- function(model_name) {
 cat("Mean AUC - Separate components:\n"); print(avg_auc("sep_comp"))
 cat("\nMean AUC - New ALI:\n");           print(avg_auc("new_ali"))
 cat("\nMean AUC - Old ALI:\n");           print(avg_auc("old_ali"))
+cat("\nMean AUC - Admission-specific: Admit:\n"); print(avg_auc("admit_ali"))
+cat("\nMean AUC - Admission-specific: Ed:\n"); print(avg_auc("ed_ali"))
+cat("\nMean AUC - Admission-specific: Ed2:\n"); print(avg_auc("ed2_ali")) 
+# Average auc_admit for Ed2 is surprisingly high!? 
+
+
