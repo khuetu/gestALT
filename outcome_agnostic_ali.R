@@ -182,9 +182,9 @@ try_pred_full_sample(
 
 #* -----------------------------------------------------------------------------
 ## Try predicting Y1 and Y2 from correctly-specified models using full sample and return separate models' AUC
-try_pred_new_ali <- function(N = 1000, beta_admit, beta_ed, beta_ed2) {
+try_pred_new_ali <- function(sim_func, N = 1000, beta_admit, beta_ed, beta_ed2) {
   ### Simulate data
-  dat <- sim_data(N = N, #### sample size
+  dat <- sim_func(N = N, #### sample size
                   beta_admit = beta_admit, #### coefficients for hospital admission Y1 | S1,...,S10
                   beta_ed = beta_ed, #### coefficients for emergency department visit Y2 | S1,...,S10
                   beta_ed2 = beta_ed2) #### coefficients for alt: emergency department visit (dependent on hospital admission) Y2 | S1,...,S10,Y1
@@ -333,6 +333,7 @@ try_pred_new_ali <- function(N = 1000, beta_admit, beta_ed, beta_ed2) {
 }
 
 try_pred_new_ali(
+  sim_data, 
   N = 1000,
   beta_admit = 3 * my_beta_admit,
   beta_ed = 3 * my_beta_ed,
@@ -346,7 +347,8 @@ n_sims <- 1000
 
 results <- lapply(1:n_sims, function(i) {
   suppressWarnings(suppressMessages(
-    try_pred_new_ali(N = 1000,
+    try_pred_new_ali(sim_data, 
+                     N = 1000,
                      beta_admit = 3 * my_beta_admit,
                      beta_ed = 3 * my_beta_ed,
                      beta_ed2 = 3 * my_beta_ed2)
@@ -368,9 +370,9 @@ cat("\nMean AUC - Old ALI:\n");           print(avg_auc("old_ali"))
 #* -----------------------------------------------------------------------------
 ## Try predicting Y1 and Y2 from correctly-specified models using full sample and return separate models' AUC
 ### Fit models using training data, evaluate using testing data (50/50 test/train split)
-try_pred_new_ali_cv <- function(N = 1000, train_prop = 0.5, beta_admit, beta_ed, beta_ed2) {
+try_pred_new_ali_cv <- function(sim_func, N = 1000, train_prop = 0.5, beta_admit, beta_ed, beta_ed2) {
   ### Simulate data
-  dat <- sim_data(N = N, #### sample size
+  dat <- sim_func(N = N, #### sample size
                   beta_admit = beta_admit, #### coefficients for hospital admission Y1 | S1,...,S10
                   beta_ed = beta_ed, #### coefficients for emergency department visit Y2 | S1,...,S10
                   beta_ed2 = beta_ed2) #### coefficients for alt: emergency department visit (dependent on hospital admission) Y2 | S1,...,S10,Y1
@@ -469,7 +471,7 @@ try_pred_new_ali_cv <- function(N = 1000, train_prop = 0.5, beta_admit, beta_ed,
                        family = "binomial")
   
   #### Predict from models using Y1, Y2 and admission-specific ALI instead of separate components
-  #### Hospital admissions
+  #### Emeregency Dept
   pred_admit_ed <- predict(fit_admit_ed, type = "response")
   #### Emergency department visits (conditionally independent of ANY_ADMIT)
   pred_ed_ed <- predict(fit_ed_ed, type = "response")
@@ -653,22 +655,14 @@ try_pred_new_ali_cv <- function(N = 1000, train_prop = 0.5, beta_admit, beta_ed,
 set.seed(22)
 n_sims <- 1000
 
-results <- lapply(1:n_sims, function(i) {
-  suppressWarnings(suppressMessages(
-    try_pred_new_ali_cv(N = 1000,
-                        beta_admit = 3 * my_beta_admit,
-                        beta_ed = 3 * my_beta_ed,
-                        beta_ed2 = 3 * my_beta_ed2)
-  ))
-})
-
-## Average AUC across reps for a given model type
-avg_auc <- function(model_name) {
+## Helper function: Average AUC across reps for a given model type
+avg_auc <- function(model_name, results) {
   mat <- do.call(rbind, lapply(results, function(r) as.numeric(r[[model_name]])))
   colnames(mat) <- names(results[[1]][[model_name]])
   colMeans(mat)
 }
 
+<<<<<<< Updated upstream
 cat("Mean AUC - Separate components:\n"); print(avg_auc("sep_comp"))
 cat("\nMean AUC - New ALI:\n");           print(avg_auc("new_ali"))
 cat("\nMean AUC - Old ALI:\n");           print(avg_auc("old_ali"))
@@ -678,3 +672,242 @@ cat("\nMean AUC - Admission-specific: Ed2:\n"); print(avg_auc("ed2_ali"))
 # Average auc_admit for Ed2 is surprisingly high!? 
 
 
+=======
+run_sim_print_res <- function(sim_func, N, beta_admit, beta_ed, beta_ed2) {
+  results <- lapply(1:n_sims, function(i) {
+    suppressWarnings(suppressMessages(
+      try_pred_new_ali_cv(sim_func, 
+                          N = 1000,
+                          beta_admit = beta_admit,
+                          beta_ed = beta_ed,
+                          beta_ed2 = beta_ed2)
+    ))
+  })
+  
+  cat("Mean AUC - Separate components:\n"); print(avg_auc("sep_comp", results))
+  cat("\nMean AUC - New ALI:\n");           print(avg_auc("new_ali", results))
+  cat("\nMean AUC - Old ALI:\n");           print(avg_auc("old_ali", results))
+  cat("\nMean AUC - Admission-specific: Admit:\n"); print(avg_auc("admit_ali", results))
+  cat("\nMean AUC - Admission-specific: Ed:\n"); print(avg_auc("ed_ali", results))
+  cat("\nMean AUC - Admission-specific: Ed2:\n"); print(avg_auc("ed2_ali", results)) 
+}
+
+###Note: Average auc_admit under ed2_ali is surprisingly high!? 
+run_sim_print_res(sim_data, 
+                  N = 1000,
+                  beta_admit = 3 * my_beta_admit,
+                  beta_ed = 3 * my_beta_ed,
+                  beta_ed2 = 3 * my_beta_ed2)
+
+#* ----------------------------- Coefficients sandbox --------------------------
+# Outcome prevelance (admit:, ed: )
+# Try parameters to see outcome prevelance before running simulations 
+try_beta_admit <- 3 * my_beta_admit
+try_beta_admit[1] <- -5
+try_dat <- sim_data(N = 10000, 
+                    beta_admit = try_beta_admit, 
+                    beta_ed = 3 * my_beta_ed,
+                    beta_ed2 = 3 * my_beta_ed2)
+table(try_dat$Y_admit)
+
+## Simulation
+run_sim_print_res(sim_data, 
+                  N = 1000,
+                  beta_admit = try_beta_admit, 
+                  beta_ed = 3 * my_beta_ed,
+                  beta_ed2 = 3 * my_beta_ed2)
+
+
+
+# covariates: age/sex (60F:40M and mean aged 48, range 18-65) 
+# Create new sim data function to include age and sex 
+sim_data_agesex <- function(N = 1000, beta_admit, beta_ed, beta_ed2) {
+  ## Begin with ALI components (10 per person) from Bernoulli (pS)
+  S <- rbinom(n = N * 10,
+              size = 1,
+              prob = rep(x = pS, times = N))
+  S_mat <- matrix(data = S,
+                  nrow = N,
+                  ncol = 10,
+                  byrow = TRUE)
+  colnames(S_mat) <- factor_ALI_comp
+  ## Simulate outcomes
+  ### Age: mean aged 48, range 18-65
+  age <- rnorm(N, mean = 48, sd = 15)
+  age <- pmin(pmax(age, 18), 65)
+  
+  ### Sex: binary (0 = male, 1 = female)
+  sex <- rbinom(N, size = 1, prob = 0.6)
+  
+  ### Hospital admission Y1 | S1,...,S10
+  mu_admit <- cbind(1, S_mat, age, sex) %*% beta_admit
+  Y_admit <- rbinom(n = N,
+                    size = 1,
+                    prob = (1 + exp(-mu_admit)) ^ (- 1))
+  ### Emergency department visit Y2 | S1,...,S10
+  mu_ed <- cbind(1, S_mat, age, sex) %*% beta_ed
+  Y_ed <- rbinom(n = N,
+                 size = 1,
+                 prob = (1 + exp(-mu_ed)) ^ (- 1))
+  ### Alt: Emergency department visit (dependent on hospital admission) Y2 | S1,...,S10,Y1
+  mu_ed2 <- cbind(1, S_mat, Y_admit, age, sex) %*% beta_ed2
+  Y_ed2 <- rbinom(n = N,
+                  size = 1,
+                  prob = (1 + exp(-mu_ed2)) ^ (- 1))
+  ## Combine all columns and return as dataframe
+  dat <- data.frame(cbind(S_mat, age = age, sex = sex, Y_admit, Y_ed, Y_ed2))
+  return(dat)
+}
+
+# beta coefficients with age and sex 
+try_beta_as_admit <- rbind(try_beta_admit, log(1.1) / 15, log(1))
+try_beta_as_ed <- rbind(3 * my_beta_ed, log(0.9) / 15, log(0.8))
+try_beta_as_ed2 <- rbind(3 * my_beta_ed2, log(0.9) / 15, log(0.8))
+try_dat <- sim_data_agesex(N = 10000, 
+                    beta_admit = try_beta_as_admit, 
+                    beta_ed = try_beta_as_ed,
+                    beta_ed2 = try_beta_as_ed2)
+table(try_dat$Y_admit)
+
+run_sim_print_res(sim_data_agesex, 
+                  N = 1000,
+                  beta_admit = try_beta_as_admit, 
+                  beta_ed = try_beta_as_ed,
+                  beta_ed2 = try_beta_as_ed2)
+
+
+# Ordering of coeffs 
+
+base_coefs <- seq(0, 1, by = 0.1) # magnitudes 0 to 1 (10 values)
+
+## Scenario 1: complete opposite 
+comp_order_admit1 <- 1:11          # A1C, ALB, BMI, CHOL, CRP, CREAT_C, HCST, TRIG, DIASTOLIC, SYSTOLIC
+comp_order_ed1    <- c(1, 11:2)
+
+or1_beta_admit <- matrix(c(3 * base_coefs[comp_order_admit1]), ncol = 1) 
+or1_beta_admit[1] <- -5
+# scaled down, reversed order
+or1_beta_ed <- matrix(c(1.5 * base_coefs[comp_order_ed1]), ncol = 1) 
+or1_beta_ed2 <- matrix(append(or1_beta_ed, value = 3 * 0.55, after = 1), ncol = 1) 
+
+# without age and sex
+or1_dat <- sim_data(N = 10000, 
+                    beta_admit = or1_beta_admit, 
+                    beta_ed = or1_beta_ed,
+                    beta_ed2 = or1_beta_ed2)
+table(or1_dat$Y_admit)
+
+### auc_admit for new ali works better compared to old ali, but auc_ed and auc_ed2 are worse 
+run_sim_print_res(sim_data, 
+                  N = 1000,
+                  beta_admit = or1_beta_admit, 
+                  beta_ed = 3 * or1_beta_ed,
+                  beta_ed2 = 3 * or1_beta_ed2)
+
+# with age and sex
+or1_beta_as_admit <- rbind(or1_beta_admit, log(1.1) / 15, log(1))
+or1_beta_as_ed <- rbind(3 * or1_beta_ed, log(0.9) / 15, log(0.8))
+or1_beta_as_ed2 <- rbind(3 * or1_beta_ed2, log(0.9) / 15, log(0.8))
+or1_dat_as <- sim_data_agesex(N = 10000, 
+                   beta_admit = or1_beta_as_admit, 
+                   beta_ed = or1_beta_as_ed,
+                   beta_ed2 = or1_beta_as_ed2)
+table(or1_dat_as$Y_admit)
+
+### auc_admit for new ali works better compared to old ali, but auc_ed and auc_ed2 are worse 
+run_sim_print_res(sim_data_agesex, 
+                  N = 1000,
+                  beta_admit = or1_beta_as_admit, 
+                  beta_ed = or1_beta_as_ed,
+                  beta_ed2 = or1_beta_as_ed2)
+
+
+## Scenario 2: partially overlapping ranking
+comp_admit_2 <- 1:11
+comp_ed_2    <- c(1, 2, 3, 6, 5, 4, 7, 8, 11, 10, 9) # swap ranks 4/6 and last two
+
+or2_beta_admit <- matrix(3 * base_coefs[comp_admit_2], ncol = 1) 
+or2_beta_admit[1] <- -5
+# scaled down, reversed order
+or2_beta_ed <- matrix(1.5 * base_coefs[comp_ed_2], ncol = 1) 
+or2_beta_ed2 <- matrix(append(or2_beta_ed, value = 3 * 0.55, after = 8), ncol = 1) 
+
+# without age and sex
+or2_dat <- sim_data(N = 10000, 
+                   beta_admit = or2_beta_admit, 
+                   beta_ed = or2_beta_ed,
+                   beta_ed2 = or2_beta_ed2)
+table(or2_dat$Y_admit)
+
+### new ali is better than old ali 
+run_sim_print_res(sim_data, 
+                  N = 1000,
+                  beta_admit = or2_beta_admit, 
+                  beta_ed = or2_beta_ed,
+                  beta_ed2 = or2_beta_ed2)
+
+# with age and sex
+or2_beta_as_admit <- rbind(or2_beta_admit, log(1.1) / 15, log(1))
+or2_beta_as_ed <- rbind(or2_beta_ed, log(0.9) / 15, log(0.8))
+or2_beta_as_ed2 <- rbind(or2_beta_ed2, log(0.9) / 15, log(0.8))
+or2_dat_as <- sim_data_agesex(N = 10000, 
+                              beta_admit = or2_beta_as_admit, 
+                              beta_ed = or2_beta_as_ed,
+                              beta_ed2 = or2_beta_as_ed2)
+table(or2_dat_as$Y_admit)
+
+### new ali is better than old ali, new ali with sex and age accounted for also
+### performs slightly better than when it's without age and sex 
+run_sim_print_res(sim_data_agesex, 
+                  N = 1000,
+                  beta_admit = or2_beta_as_admit, 
+                  beta_ed = or2_beta_as_ed,
+                  beta_ed2 = or2_beta_as_ed2)
+
+
+
+## Scenario 3: A1C dominant, different tails 
+or3_beta_admit <- matrix(3 * c(0, 1.0, rep(0.4, 9)), ncol = 1)   # A1C dominant, rest small+equal
+or3_beta_admit[1] <- -5
+or3_beta_ed    <- matrix(3 * c(0, 1.0, rep(0.25, 9)), ncol = 1)  # A1C dominant, rest near-zero
+or3_beta_ed2 <- matrix(3 * c(0, 1.0, rep(0.25, 9), 0.55), ncol = 1)
+# without age and sex
+or3_dat <- sim_data(N = 10000, 
+                    beta_admit = or3_beta_admit, 
+                    beta_ed = or3_beta_ed,
+                    beta_ed2 = or3_beta_ed2)
+table(or3_dat$Y_admit)
+
+### new ali is better than old ali 
+run_sim_print_res(sim_data, 
+                  N = 1000,
+                  beta_admit = or3_beta_admit, 
+                  beta_ed = or3_beta_ed,
+                  beta_ed2 = or3_beta_ed2)
+
+# with age and sex
+or3_beta_as_admit <- rbind(or3_beta_admit, log(1.1) / 15, log(1))
+or3_beta_as_ed <- rbind(or3_beta_ed, log(0.9) / 15, log(0.8))
+or3_beta_as_ed2 <- rbind(or3_beta_ed2, log(0.9) / 15, log(0.8))
+or3_dat_as <- sim_data_agesex(N = 10000, 
+                              beta_admit = or3_beta_as_admit, 
+                              beta_ed = or3_beta_as_ed,
+                              beta_ed2 = or3_beta_as_ed2)
+table(or3_dat_as$Y_admit)
+
+### new ali is better than old ali, new ali with sex and age accounted for also
+### performs slightly better than when it's without age and sex 
+run_sim_print_res(sim_data_agesex, 
+                  N = 1000,
+                  beta_admit = or3_beta_as_admit, 
+                  beta_ed = or3_beta_as_ed,
+                  beta_ed2 = or3_beta_as_ed2)
+
+
+#*------------------------------- Possible Next Steps? -------------------------
+#* Real biomarkers are correlated (A1C and BMI, blood pressure components, etc.). Adding a correlation structure
+#* Aggregate probabilities: simplex? but minimize what? or constrained MLE? 
+#* Run simulations where some components truly don't matter (zero true coefficient) and verify the new ALI down-weights them appropriately
+#* Multinomial 
+#* Down the road: missingness: pattern submodel 
+>>>>>>> Stashed changes
