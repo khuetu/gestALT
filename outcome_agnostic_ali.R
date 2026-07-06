@@ -494,6 +494,8 @@ try_pred_new_ali_cv <- function(sim_func, N = 1000, train_prop = 0.5, beta_admit
   
   #### Fit models using Y1, Y2 and admission-specific ALI instead of separate components
   #### Emergency Department2
+  #### NOTE: pred_ed2 is predicted from the mode: fit_ed2, where its formula is: 
+  #### "Y_ed2 ~", paste0(factor_ALI_comp, collapse = "+"), " + Y_admit"
   fit_admit_ed2 <- glm(formula = Y_admit ~ pred_ed2,
                       data = test_dat,
                       family = "binomial")
@@ -662,17 +664,6 @@ avg_auc <- function(model_name, results) {
   colMeans(mat)
 }
 
-<<<<<<< Updated upstream
-cat("Mean AUC - Separate components:\n"); print(avg_auc("sep_comp"))
-cat("\nMean AUC - New ALI:\n");           print(avg_auc("new_ali"))
-cat("\nMean AUC - Old ALI:\n");           print(avg_auc("old_ali"))
-cat("\nMean AUC - Admission-specific: Admit:\n"); print(avg_auc("admit_ali"))
-cat("\nMean AUC - Admission-specific: Ed:\n"); print(avg_auc("ed_ali"))
-cat("\nMean AUC - Admission-specific: Ed2:\n"); print(avg_auc("ed2_ali")) 
-# Average auc_admit for Ed2 is surprisingly high!? 
-
-
-=======
 run_sim_print_res <- function(sim_func, N, beta_admit, beta_ed, beta_ed2) {
   results <- lapply(1:n_sims, function(i) {
     suppressWarnings(suppressMessages(
@@ -910,4 +901,6 @@ run_sim_print_res(sim_data_agesex,
 #* Run simulations where some components truly don't matter (zero true coefficient) and verify the new ALI down-weights them appropriately
 #* Multinomial 
 #* Down the road: missingness: pattern submodel 
->>>>>>> Stashed changes
+=======
+
+                               
