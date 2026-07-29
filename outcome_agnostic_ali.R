@@ -792,8 +792,8 @@ table(or1_dat$Y_admit)
 run_sim_print_res(sim_data, 
                   N = 1000,
                   beta_admit = or1_beta_admit, 
-                  beta_ed = 3 * or1_beta_ed,
-                  beta_ed2 = 3 * or1_beta_ed2)
+                  beta_ed = or1_beta_ed,
+                  beta_ed2 = or1_beta_ed2)
 
 # with age and sex
 or1_beta_as_admit <- rbind(or1_beta_admit, log(1.1) / 15, log(1))
@@ -815,7 +815,7 @@ run_sim_print_res(sim_data_agesex,
 
 ## Scenario 2: partially overlapping ranking
 comp_admit_2 <- 1:11
-comp_ed_2    <- c(1, 2, 3, 6, 5, 4, 7, 8, 11, 10, 9) # swap ranks 4/6 and last two
+comp_ed_2    <- c(1, 2, 3, 6, 5, 4, 7, 8, 11, 10, 9) # swap ranks 4/6 and last three
 
 or2_beta_admit <- matrix(3 * base_coefs[comp_admit_2], ncol = 1) 
 or2_beta_admit[1] <- -5
@@ -896,11 +896,14 @@ run_sim_print_res(sim_data_agesex,
 
 
 #*------------------------------- Possible Next Steps? -------------------------
+#* pS equal for all components 
 #* Real biomarkers are correlated (A1C and BMI, blood pressure components, etc.). Adding a correlation structure
+#* Opt1: Multinormmal and pick correlated structure -> discretize instead of binary (bernoulli components)
+#* mvrnorm {MASS}: mu = complete case mean, cov matrix, na.remove = TRUE, correlation component are missing 
+#* Opt2: Conditional bernoulli on one another (component wise)
 #* Aggregate probabilities: simplex? but minimize what? or constrained MLE? 
 #* Run simulations where some components truly don't matter (zero true coefficient) and verify the new ALI down-weights them appropriately
 #* Multinomial 
 #* Down the road: missingness: pattern submodel 
-=======
 
                                
