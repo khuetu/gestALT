@@ -1,5 +1,5 @@
 ## Set working directory to project root if not already there
-# setwd("outcome_agnostic_ali")
+# setwd("GestALT")
 
 ## --- Load function definitions ----------------------------------------------
 source("R/00_setup.R")
@@ -251,3 +251,6 @@ run_sim_print_res(sim_data_agesex,
                   beta_admit = or3_beta_as_admit, 
                   beta_ed = or3_beta_as_ed,
                   beta_ed2 = or3_beta_as_ed2)
+
+
+
