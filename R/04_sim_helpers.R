@@ -6,10 +6,11 @@ avg_auc <- function(model_name, results) {
 }
 
 run_sim_print_res <- function(sim_func, N, beta_admit, beta_ed, beta_ed2) {
+  n_sims <- 1000 #hard code for now 
   results <- lapply(1:n_sims, function(i) {
     suppressWarnings(suppressMessages(
       try_pred_new_ali_cv(sim_func, 
-                          N = 1000,
+                          N = N,
                           beta_admit = beta_admit,
                           beta_ed = beta_ed,
                           beta_ed2 = beta_ed2)
