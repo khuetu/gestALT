@@ -8,8 +8,6 @@ source("R_multi/01_simulate_data.R")
 source("R_multi/03_predict_auc.R")
 source("R_multi/04_sim_helpers.R")
 
-
-
 #* ----------------------------- Coefficients sandbox (multi-outcome, K = 5) ---
 set.seed(123)
 
@@ -21,21 +19,25 @@ target_prev <- K_outcomes$prev   # the prevalence every scenario below must matc
 base_coefs <- seq(0.1, 1, by = 0.1)
 
 ## Sign/scale per outcome -- matches your original "Test" my_betas pattern
-outcome_scale <- c(0.5, 0.05, -0.5, -0.5, 0.5)
+outcome_scale <- c(0.5, 0.5, 0.5, -0.5, 0.5)
 
-#* --- Default ------------------------------------------------------------------
-my_betas <- matrix(c(seq(0, 0.5, length.out = 11), 
+#* --- Test coef ------------------------------------------------------------------
+test_betas <- matrix(c(seq(0, 0.5, length.out = 11), 
                      seq(0, 0.5, length.out = 11), 
                      seq(0, 0.5, length.out = 11), 
                      seq(0, -0.5, length.out = 11), 
                      seq(0, 0.5, length.out = 11)
 ), nrow = 11, ncol = 5)
 beta0s <- qlogis(outcomes_reference$prev + 0.02)
-my_betas[1, ] <- beta0s[1:5]
+test_betas[1, ] <- beta0s[1:5]
 
 #* --- Ordering -----------------------------------------------------------------
 order_ref <- 1:10   # A1C -> SYSTOLIC, increasing magnitude
 order_opp <- 10:1   # SYSTOLIC -> A1C, decreasing magnitude
+
+#* --- Default ------------------------------------------------------------------
+order_list_ref <- rep(list(order_ref), K)
+my_betas <- build_my_betas(order_list_ref, base_coefs, outcome_scale, target_prev)
 
 #* --- Scenario 1: only outcome 1 gets the opposite ordering --------------------
 order_list_opp <- list(order_opp, order_ref, order_ref, order_ref, order_ref)
@@ -55,7 +57,13 @@ ref_cols <- build_my_betas(list(order_ref, order_ref, order_ref, order_ref),
 my_betas_a1cdom <- cbind(a1c_col, ref_cols)
 colnames(my_betas_a1cdom) <- paste0("beta", 1:5)
 
+#* --- Equal Prev Coef ----------------------------------------------------------
+my_betas_eqprev <- build_my_betas(order_list_ref, base_coefs, outcome_scale, target_prev,
+                                  pS_vec = rep(0.208, 10))
+
 #* ------------------------ Sanity check: prevalence match ----------------------
+check_scenario(test_betas,    "Test Coefficient")
+check_scenario(my_betas,    "Default Coefficient")
 check_scenario(my_betas_opp,    "Outcome 1: Opposite Ordering")
 check_scenario(my_betas_part,   "Outcome 1: Partial Ordering")
 check_scenario(my_betas_a1cdom, "Outcome 1: A1C Dominant")
@@ -69,7 +77,31 @@ auc_a1cdom <- run_sim_print_res(sim_data_multi, N = 10000, K = K, betas = my_bet
 #* ---------------------- Correlation vs No correlation ------------------------
 auc_corr <- run_sim_print_res(sim_data_multi_corr, N = 10000, K = K, betas = my_betas) # same my_betas
 #* ---------------------- Equal Prevalence vs Empirical ------------------------
-auc_eq_prev <- run_sim_print_res(sim_data_multi_eqprev, N = 10000, K = K, betas = my_betas) # same my_betas
+auc_eq_prev <- run_sim_print_res(sim_data_multi_eqprev, N = 10000, K = K, betas = my_betas_eqprev)
+
+
+
+#* --------------------------- Multiple Outcomes ---------------------------------
+outcomes_scale <- c(0.5, 0.5, 0.5, -0.5, 0.5, 
+                   0.5, -0.5, -0.5, -0.5, 0.5, 
+                   0.5, -0.5, -0.5, 0.5, 0.5, 
+                   0.5, 0.5, 0.5, 0.5, -0.5)
+multi_list <- c(2, 5, 10, 20)
+auc_multi <- vector("list", length(multi_list))
+names(auc_multi) <- paste0("K_", multi_list)
+for (k in multi_list) {
+  index <- match(k, multi_list)
+  k_outcomes <- outcomes_reference |> slice(1:k)
+  target_prev <- k_outcomes$prev
+  
+  order_list_ref <- rep(list(order_ref), k)
+  outcome_scale <- outcomes_scale[c(1:k)]
+  
+  betas_multi <- build_my_betas(order_list_ref, base_coefs, outcome_scale, target_prev)
+  auc_multi[[index]] <- run_sim_print_res(sim_data_multi, N = 10000, K = k, betas = betas_multi)
+}
+auc_multi
+
 
 #* ------------------------------- Store Data ------------------------------------
 library(writexl)
@@ -83,8 +115,16 @@ aucs_list <- list(
   "Correlated Components (Default)" = auc_corr, 
   "Equal Component Prev (Default)" = auc_eq_prev
 )
-
 write.xlsx(aucs_list, file = "aucs_K5.xlsx", rowNames = TRUE, colWidths = "auto")
+
+aucs_multi_list <- list(
+  "K = 2" = auc_multi[[1]], 
+  "K = 5" = auc_multi[[2]], 
+  "K = 10" = auc_multi[[3]], 
+  "K = 20" = auc_multi[[4]], 
+)
+write.xlsx(auc_mutli, file = "aucs_multi.xlsx", rowNames = TRUE, colWidths = "auto")
+
 
 #* ------------------------------ Radar/Spider Plot -------------------------------
 library(fmsb)
