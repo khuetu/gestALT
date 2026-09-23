@@ -84,7 +84,7 @@ set.seed(22)
 n_sims <- 1000
 
 ###Note: Average auc_admit under ed2_ali is surprisingly high!? 
-run_sim_print_res(sim_data, 
+auc_default <- run_sim_print_res(sim_data, 
                   N = 1000,
                   beta_admit = 3 * my_beta_admit,
                   beta_ed = 3 * my_beta_ed,
@@ -102,7 +102,7 @@ try_dat <- sim_data(N = 10000,
 table(try_dat$Y_admit)
 
 ## Simulation
-run_sim_print_res(sim_data, 
+auc_default2 <- run_sim_print_res(sim_data, 
                   N = 1000,
                   beta_admit = try_beta_admit, 
                   beta_ed = 3 * my_beta_ed,
@@ -118,11 +118,11 @@ try_dat <- sim_data_agesex(N = 10000,
                     beta_ed2 = try_beta_as_ed2)
 table(try_dat$Y_admit)
 
-run_sim_print_res(sim_data_agesex, 
-                  N = 1000,
-                  beta_admit = try_beta_as_admit, 
-                  beta_ed = try_beta_as_ed,
-                  beta_ed2 = try_beta_as_ed2)
+auc_default2_agesex <- run_sim_print_res(sim_data_agesex, 
+                                        N = 1000,
+                                        beta_admit = try_beta_as_admit, 
+                                        beta_ed = try_beta_as_ed,
+                                        beta_ed2 = try_beta_as_ed2)
 
 
 # Ordering of coeffs 
@@ -140,14 +140,15 @@ or1_beta_ed <- matrix(c(1.5 * base_coefs[comp_order_ed1]), ncol = 1)
 or1_beta_ed2 <- matrix(append(or1_beta_ed, value = 3 * 0.55, after = 1), ncol = 1) 
 
 # without age and sex
-or1_dat <- sim_data(N = 10000, 
+or1_dat <- sim_data(N = 1000, 
                     beta_admit = or1_beta_admit, 
                     beta_ed = or1_beta_ed,
                     beta_ed2 = or1_beta_ed2)
 table(or1_dat$Y_admit)
+table(or1_dat$Y_ed)
 
 ### auc_admit for new ali works better compared to old ali, but auc_ed and auc_ed2 are worse 
-run_sim_print_res(sim_data, 
+auc_opp <- run_sim_print_res(sim_data, 
                   N = 1000,
                   beta_admit = or1_beta_admit, 
                   beta_ed = 3 * or1_beta_ed,
@@ -164,7 +165,7 @@ or1_dat_as <- sim_data_agesex(N = 10000,
 table(or1_dat_as$Y_admit)
 
 ### auc_admit for new ali works better compared to old ali, but auc_ed and auc_ed2 are worse 
-run_sim_print_res(sim_data_agesex, 
+auc_opp_age_sex <- run_sim_print_res(sim_data_agesex, 
                   N = 1000,
                   beta_admit = or1_beta_as_admit, 
                   beta_ed = or1_beta_as_ed,
@@ -189,7 +190,7 @@ or2_dat <- sim_data(N = 10000,
 table(or2_dat$Y_admit)
 
 ### new ali is better than old ali 
-run_sim_print_res(sim_data, 
+auc_part <- run_sim_print_res(sim_data, 
                   N = 1000,
                   beta_admit = or2_beta_admit, 
                   beta_ed = or2_beta_ed,
@@ -207,7 +208,7 @@ table(or2_dat_as$Y_admit)
 
 ### new ali is better than old ali, new ali with sex and age accounted for also
 ### performs slightly better than when it's without age and sex 
-run_sim_print_res(sim_data_agesex, 
+auc_part_agesex <- run_sim_print_res(sim_data_agesex, 
                   N = 1000,
                   beta_admit = or2_beta_as_admit, 
                   beta_ed = or2_beta_as_ed,
@@ -228,7 +229,7 @@ or3_dat <- sim_data(N = 10000,
 table(or3_dat$Y_admit)
 
 ### new ali is better than old ali 
-run_sim_print_res(sim_data, 
+auc_a1cdom <- run_sim_print_res(sim_data, 
                   N = 1000,
                   beta_admit = or3_beta_admit, 
                   beta_ed = or3_beta_ed,
@@ -243,14 +244,72 @@ or3_dat_as <- sim_data_agesex(N = 10000,
                               beta_ed = or3_beta_as_ed,
                               beta_ed2 = or3_beta_as_ed2)
 table(or3_dat_as$Y_admit)
+table(or3_dat_as$Y_ed)
 
 ### new ali is better than old ali, new ali with sex and age accounted for also
 ### performs slightly better than when it's without age and sex 
-run_sim_print_res(sim_data_agesex, 
+auc_a1cdom_agesex <- run_sim_print_res(sim_data_agesex, 
                   N = 1000,
                   beta_admit = or3_beta_as_admit, 
                   beta_ed = or3_beta_as_ed,
                   beta_ed2 = or3_beta_as_ed2)
 
 
+# ------------------------------- Store Data ---------------------------------
+library(writexl)
+library(openxlsx) 
+aucs_list <- list("Test" = auc_default, 
+                "Default" = auc_default2,
+                "Default with Age Sex" = auc_default2_agesex,
+                "Opposite Ordering" = auc_opp,
+                "Opposite Ordering with Age Sex" = auc_opp_age_sex,
+                "Partial Ordering" = auc_part,
+                "Partial Ordering with Age Sex" = auc_part_agesex,
+                "A1c Dominant Ordering" = auc_a1cdom,
+                "A1c Dominant with Age Sex" = auc_a1cdom_agesex
+)
+
+write.xlsx(
+  aucs_list, 
+  file = "formatted_file.xlsx", 
+  asTable = TRUE,      
+  colWidths = "auto"  
+)
+
+# ------------------------------ Radar/Spider Plots ----------------------------
+library(fmsb)
+
+aucs <- aucs_list[["A1c Dominant with Age Sex"]]
+radar_data <- rbind(
+  rep(1, ncol(aucs)),   # max
+  rep(0.5, ncol(aucs)),   # min
+  aucs
+)
+
+plot_data <- 50 + radar_data[c("sep_comp", "new_ali", "old_ali") %in% rownames(radar_data) |
+                               rownames(radar_data) %in% c(NA), ] / 100 * (100 - 50) 
+plot_data <- rbind(plot_data[1:2, ], plot_data[c("sep_comp", "new_ali", "old_ali"), ])
+
+colors_border <- c("#E41A1C", "#377EB8", "#4DAF4A")
+colors_in <- adjustcolor(colors_border, alpha.f = 0.2)
+
+radarchart(plot_data,
+           axistype = 1,
+           pcol = colors_border,
+           plwd = 2,
+           plty = 1,
+           cglcol = "grey70",
+           cglty = 1,
+           axislabcol = "grey70",
+           calcex = 0.8,
+           caxislabels = c(round(seq(0.5, 1, length = 5), 2), 1),
+           cglwd = 0.8,
+           vlcex = 0.9)
+
+legend("topright", legend = rownames(plot_data)[3:5],
+       col = colors_border, lty = 1, lwd = 2, bty = "n")
+
+
+
+  
 

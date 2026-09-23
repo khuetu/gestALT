@@ -588,6 +588,7 @@ try_pred_new_ali_3folds <- function(sim_func, N = 1000,
   
   # equal ALI: fit on VALID, eval on TEST -----------------------------------------------------------------
   valid_dat$old_ali <- rowSums(valid_dat[, 1:10]) / 10
+  test_dat$old_ali  <- rowSums(test_dat[, 1:10]) / 10 
 
   fit_admit_old <- glm(Y_admit ~ old_ali, data = valid_dat, family = "binomial")
   fit_ed_old    <- glm(Y_ed    ~ old_ali, data = valid_dat, family = "binomial")
