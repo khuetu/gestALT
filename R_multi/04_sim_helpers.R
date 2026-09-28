@@ -45,11 +45,16 @@ check_prev <- function(dat, K_outcomes) {
 }
 
 ## ---------------------------- Prevalence scenario helper ------------------------
-check_scenario <- function(my_betas, label) {
+check_scenario <- function(my_betas, label, K = 5) {
   dat <- sim_data_multi(N = 200000, K = K, betas_outcomes = my_betas)
+  
+  K_outcomes <- outcomes_reference |> slice(1:K)
+  K_target_prev <- target_prev[1:K] 
+  
   simulated <- check_prev(dat, K_outcomes)["prev", ]
+
   cat(sprintf("\n--- %s ---\n", label))
-  print(rbind(target = target_prev, simulated = simulated))
+  print(rbind(target = K_target_prev, simulated = simulated))
 }
 
 ## ---------------------------- Intercept calibration ---------------------------

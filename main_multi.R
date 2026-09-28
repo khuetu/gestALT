@@ -86,7 +86,7 @@ outcomes_scale <- c(0.5, 0.5, 0.5, -0.5, 0.5,
                    0.5, -0.5, -0.5, -0.5, 0.5, 
                    0.5, -0.5, -0.5, 0.5, 0.5, 
                    0.5, 0.5, 0.5, 0.5, -0.5)
-multi_list <- c(2, 5, 10, 20)
+multi_list <- c(2, 5, 10, 15)
 auc_multi <- vector("list", length(multi_list))
 names(auc_multi) <- paste0("K_", multi_list)
 for (k in multi_list) {
@@ -121,9 +121,28 @@ aucs_multi_list <- list(
   "K = 2" = auc_multi[[1]], 
   "K = 5" = auc_multi[[2]], 
   "K = 10" = auc_multi[[3]], 
-  "K = 20" = auc_multi[[4]], 
+  "K = 15" = auc_multi[[4]]
 )
-write.xlsx(auc_mutli, file = "aucs_multi.xlsx", rowNames = TRUE, colWidths = "auto")
+write.xlsx(aucs_multi_list, file = "aucs_multi.xlsx", rowNames = TRUE, colWidths = "auto")
+
+
+
+
+
+
+
+
+
+
+#* --------------------- Coefficients Not Tied to Prev -------------------------
+norm_betas <- matrix(rnorm(11 * 5), nrow = 11, ncol = 5)
+check_scenario(norm_betas,    "Norm Coefficient", K = 5)
+
+run_sim_print_res(sim_data_multi, N = 10000, K = K, betas = norm_betas)
+
+
+
+
 
 
 #* ------------------------------ Radar/Spider Plot -------------------------------

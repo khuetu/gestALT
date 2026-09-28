@@ -22,13 +22,13 @@ outcomes_reference <- data.frame(
   outcomes = c(
     "CVD", "Stroke", "Heart Failure", "Type II Diabetes", "Obesity", 
     "Schizophrenia", "Depression", "Anxiety", "Dementia", "Frailty", 
-    "Chronic Kidney Disease", "Asthma", "Osteoarithritis", "Migraines", "Stomach Cancer", 
-    "Liver Cancer", "Kidney Cancer", "Escphageal Cancer", "Lung Cancer", "Breast Cancer"
+    "Chronic Kidney Disease", "Asthma", "Osteoarithritis", "Migraines", "Breast Cancer", 
+    "Stomach Cancer", "Liver Cancer", "Kidney Cancer", "Escphageal Cancer", "Lung Cancer"
   ), 
   prev = c(0.09200, 0.03900, 0.02590, 0.08700, 0.31100, 
            0.01100, 0.22500, 0.19100, 0.11600, 0.09000, 
-           0.03500, 0.14800, 0.27900, 0.12000, 0.00006, 
-           0.00009, 0.00019, 0.00004, 0.00061, 0.12500) # from the gesltalt prev lit table 
+           0.03500, 0.14800, 0.27900, 0.12000, 0.12500, 
+           0.00006, 0.00009, 0.00019, 0.00004, 0.00061) # from the gesltalt prev lit table 
 )
 
 
